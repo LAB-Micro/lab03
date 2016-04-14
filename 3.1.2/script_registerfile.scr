@@ -1,0 +1,60 @@
+# Define variables
+set Period 2
+set delay 2
+
+# analyzing and checking vhdl netlist #
+analyze -library WORK -format vhdl {registerfile.vhd}
+
+# elaborating the top entity #
+elaborate CFG_RF_BEH -library WORK -parameters "npower = 3, nbit = 8"
+
+
+
+
+# first compilation, without constraints #
+compile
+
+# saving file #
+write -hierarchy -format vhdl -output registerfile-8bits-synth-no-opt.vhdl
+
+# reporting timing and power after the first synthesis without constraints #
+report_timing > registerfile-8bits-no-opt-timing.txt
+report_area > registerfile-8bits-no-opt-area.txt
+
+
+
+
+#Forces a clock of period Period connected to the input port CLK #
+create_clock -name "CLK" -period $Period CLK
+
+# second compilation, with clk constraints #
+compile -map_effort high
+
+# saving file #
+write -hierarchy -format vhdl -output registerfile-8bits-synth-clk-opt.vhdl
+
+# reporting timing and power after the first synthesis with clock constraint #
+report_timing > registerfile-8bits-clk-opt-timing.txt
+report_area > registerfile-8bits-clk-opt-area.txt
+
+# report clock #
+report_clock > registerfile-8bits-clk-opt-clock.txt
+
+
+
+
+# Set max_delay #
+set_max_delay $delay -from [all_inputs] -to [all_outputs]
+
+# optimize
+compile -map_effort high
+
+# saving file #
+write -hierarchy -format vhdl -output registerfile-8bitsh-clk-delay-opt-synt.vhdl
+
+# reporting timing and power after the first synthesis with clock and max_delay constraints #
+report_timing > registerfile-8bits-clk-delay-opt-timing.txt
+report_area > registerfile-8bits-clk-delay-opt-area.txt
+
+# report clock #
+report_clock > registerfile-8bits-clk-delay-opt-clock.txt
