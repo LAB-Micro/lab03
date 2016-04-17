@@ -26,7 +26,7 @@ port(
 
         --subroutine management
         CALL: 		IN std_logic;
-        RETURN: 	IN std_logic;
+        RET: 	    IN std_logic; --return is a key word, not available
                 
         --signal to/from memory
         -- update the CWP register by register: you must suppose to spill one register at each clock cycle
