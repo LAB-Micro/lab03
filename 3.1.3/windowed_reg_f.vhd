@@ -3,11 +3,11 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity windowed_reg is
 generic (
-          M : integer :=4; 		--number global registers	
-          N : integer :=4; 		--number of registers in each of the IN/OUT/LOCAL window
-		  F : integer :=4; 		--number of window
-          expN : integer :=2; 	--exponent 2^expN= N
-          nbit : integer := 8 	--width of each register
+          M : natural :=4; 		--number global registers	
+          N : natural :=4; 		--number of registers in each of the IN/OUT/LOCAL window
+		  F : natural :=4; 		--number of window
+          naddr : natural :=2; 	--lenght of the address signal = log2(3*N+M)
+          nbit : natural := 8 	--width of each register
           );
 port(
 
@@ -17,9 +17,9 @@ port(
         RD1: 		IN std_logic;
         RD2:  		IN std_logic;
         WR: 	  	IN std_logic;
-        ADD_WR: 	IN std_logic_vector(expN-1 downto 0);
-        ADD_RD1: 	IN std_logic_vector(expN-1 downto 0);
-        ADD_RD2: 	IN std_logic_vector(expN-1 downto 0);
+        ADD_WR: 	IN std_logic_vector(naddr-1 downto 0);
+        ADD_RD1: 	IN std_logic_vector(naddr-1 downto 0);
+        ADD_RD2: 	IN std_logic_vector(naddr-1 downto 0);
         DATAIN: 	IN std_logic_vector(nbit-1 downto 0);
         OUT1: 		OUT std_logic_vector(nbit-1 downto 0);
         OUT2: 		OUT std_logic_vector(nbit-1 downto 0);
@@ -40,23 +40,30 @@ end windowed_reg;
 
 architecture Behavioral of windowed_reg is
 
-subtype REG_ADDR is natural range 0 to (F*N+M-1); -- using natural type
+subtype REG_ADDR is natural range 0 to (F*3*N+M-1); -- using natural type
 type REG_ARRAY is array(REG_ADDR) of std_logic_vector(nbit-1 downto 0); 
 signal REGISTERS : REG_ARRAY;
 	
 --internal registers
-signal SWP, CWP : integer :=0; 
+signal SWP, CWP : natural :=0; 
 signal CANSAVE, CANRESTORE : std_logic;
 
-begin
+--ADDRESS FOR THE REGISTER
+signal R1_AddrInt  : natural range 0 to (2**naddr)-1; 
+signal R2_AddrInt  : natural range 0 to (2**naddr)-1; 
+signal W_AddrInt  : natural range 0 to (2**naddr)-1; 
 
+begin
+R1_AddrInt 	 <=  to_integer (unsigned (ADD_RD1));
+R2_AddrInt 	 <=  to_integer (unsigned (ADD_RD2));
+W_AddrInt 	 <=  to_integer (unsigned (ADD_WR));
+  
 	P0 : process (CLK)
 	begin
 		if (CLK='1' and CLK'event) then	
 			--synchronous reset
 			if RESET='1' then
 				for I in 0 to F*N+M-1 loop
-				--REGISTERS <= (others => '0');
 				REGISTERS(I) <= (others => '0');
 				end loop;
 				--internal signals
@@ -73,6 +80,17 @@ begin
 		
 			--synchronous read/write with high enable signal
 			elsif ENABLE='1' then 
+			
+				--Within a subroutine
+				if RD1='1' then
+					OUT1 <= REGISTERS(R1_AddrInt);
+                end if;
+                if RD2='1' then
+                    OUT2 <= REGISTERS(R2_AddrInt);
+                end if;
+                if WR='1' then
+                    REGISTERS(W_AddrInt) <=DATAIN;
+                end if;
 				
 			end if;
 				  
