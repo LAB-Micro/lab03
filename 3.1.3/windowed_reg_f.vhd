@@ -52,7 +52,7 @@ signal SWP, CWP 	: integer range 0 to (TotalRegisters)-1;
 signal CANSAVE, CANRESTORE : std_logic;
 signal Storing: std_logic;
 signal firstStoring: std_logic;
-signal temp: integer;
+signal Restoring: std_logic;
 
 --ADDRESS FOR THE REGISTER
 signal R1_AddrInt	: integer range 0 to (2**naddr)-1; 
@@ -73,10 +73,11 @@ begin
 				SWP <= 0;
 				CWP <= 0;
 				CANSAVE <= '1';
-				CANRESTORE <= '1';
+				CANRESTORE <= '0';
 				Storing <= '0';
 				firstStoring <= '1';
-
+				Restoring <= '0';
+				
 				--external signals
 				OUT1 <= (others => 'Z');
 				OUT2 <= (others => 'Z');
@@ -87,7 +88,7 @@ begin
 			--synchronous read/write with high enable signal
 			elsif ENABLE='1' then 
 			
-				if Storing = '0' then
+				if Storing = '0' and Restoring = '0' then
 					if CALL='0' and RET='0' then
 						--Within a subroutine
 						R1_AddrInt 	 <=  conv_integer(ADD_RD1);
@@ -106,7 +107,8 @@ begin
 					elsif CALL='1' and RET='0'then	--call
 						
 						if CANSAVE = '1' then
-						CWP <= (CWP + (2*N)) mod (TotalRegisters); --è ancora possibile salvare nel register file
+							CWP <= (CWP + (2*N)) mod (TotalRegisters); --è ancora possibile salvare nel register file
+							CANRESTORE <= '1';
 						end if;	
 				
 						if CWP = TotalRegisters - 2*N or CANSAVE = '0' then --se si è arrivati all'ultimo slot libero oppure se sono richieste altre call dopo che la fine è stata superatata
@@ -118,13 +120,27 @@ begin
 							SWP <= (SWP + (2*N)) mod (TotalRegisters);--aggiorno il SWP (uso il mod cosi se arrivo al max lui riparte da 0)
 						end if;
 					
-					elsif CALL='0' and RET='1' then
-						CWP <= CWP - (2*N);
-					
+					elsif CALL='0' and RET='1' then --return
+						
+						if CANRESTORE = '1' then
+							if CWP = SWP then --condizione per la quale è necessario fare FILL dalla memoria
+								FILL <= '1'; --va in input alla MMU
+								Restoring <= '1';
+							else
+								if CWP = 0 then
+									if CANSAVE = '0' then	--vuol dire che ha gia fatto un giro perchè gia precedentemente il CANSAVE è stato settato a 0, cioe non erano sufficienti i registri ed è stato necessario caricare il piu vecchio set di registri in memoria
+										TotalRegisters - (2*N); --torna alla coda del registro
+									else
+										CANRESTORE <= '0';	--non è possibile fare un return fino a una CALL
+									end if;
+								else
+									CWP <= (CWP - (2*N)); --è ancora possibile tornare indietro nel register file senza prelevare dalla memoria
+								end if;
+							end if;
+						end if;	
 					end if;
 
-				else --serve per salvare ad ogni clock gli 2*N registri
-					temp <= CWP mod (2*N);
+				elsif Storing = '1' then --serve per salvare ad ogni clock gli 2*N registri
 					if CWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
 						CWP <= (CWP + 1) mod TotalRegisters; --incrementa di uno il CWP e il registro indirrizzato lo salva in memoria
 						DATA_TO_MEM <= REGISTERS(CWP);
@@ -134,6 +150,17 @@ begin
 						Storing <= '0';
 						firstStoring <= '1';
 						DATA_TO_MEM <= (others => 'Z');
+					end if;
+					
+				elsif Restoring = '1' then
+					if CWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
+						CWP <= (CWP - 1); --incrementa di uno il CWP e il registro indirrizzato lo salva in memoria
+						REGISTERS(CWP) <= DATA_FROM_MEM;
+						firstStoring <= '0';
+					else
+						FILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di SPILL e di Storing
+						Restoring <= '0';
+						firstStoring <= '1';
 					end if;
 				end if;
 			end if;
