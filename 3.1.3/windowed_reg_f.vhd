@@ -35,7 +35,7 @@ port(
         FILL: 		OUT std_logic;
         SPILL: 	    	OUT std_logic;
         
-        DATA_FORM_MEM : IN std_logic_vector(nbit-1 downto 0);	--data to restore from mem
+        DATA_FROM_MEM : IN std_logic_vector(nbit-1 downto 0);	--data to restore from mem
         DATA_TO_MEM :	OUT std_logic_vector(nbit-1 downto 0)		--data to store to mem
 );
 end windowed_reg;
@@ -53,11 +53,30 @@ signal CANSAVE, CANRESTORE : std_logic;
 signal Storing: std_logic;
 signal firstStoring: std_logic;
 signal Restoring: std_logic;
+signal tempCWP: integer;
 
 --ADDRESS FOR THE REGISTER
 signal R1_AddrInt	: integer range 0 to (2**naddr)-1; 
 signal R2_AddrInt	: integer range 0 to (2**naddr)-1; 
 signal W_AddrInt	: integer range 0 to (2**naddr)-1; 
+
+function increasePointerBuffer(WP: integer) return integer is
+	variable tmp: integer;
+	begin
+	tmp := (WP + (2*N)) mod (TotalRegisters);
+	return tmp;
+end increasePointerBuffer;
+
+function decreasePointerBuffer(WP: integer) return integer is
+	variable tmp: integer;
+	begin
+	if WP = 0 then
+		tmp := TotalRegisters - 2*N;
+	else 
+		tmp := WP - (2*N);
+	end if;
+	return tmp;
+end decreasePointerBuffer;
 
 begin
 
@@ -107,43 +126,39 @@ begin
 					elsif CALL='1' and RET='0'then	--call
 						
 						if CANSAVE = '1' then
-							CWP <= (CWP + (2*N)) mod (TotalRegisters); --è ancora possibile salvare nel register file
+							CWP <= increasePointerBuffer(CWP); --è ancora possibile salvare nel register file
 							CANRESTORE <= '1';
 						end if;	
 				
-						if CWP = TotalRegisters - 2*N or CANSAVE = '0' then --se si è arrivati all'ultimo slot libero oppure se sono richieste altre call dopo che la fine è stata superatata
+						if CWP = (TotalRegisters - 4*N) or CANSAVE = '0' then --se si è arrivati all'ultimo slot libero oppure se sono richieste altre call dopo che la fine è stata superatata
 							CANSAVE <= '0';
 							--memorize the next IN/LOCAL in memory
 							SPILL <= '1'; --va in output alla MMU
 							Storing <= '1'; --segnale interno
-							
-							SWP <= (SWP + (2*N)) mod (TotalRegisters);--aggiorno il SWP (uso il mod cosi se arrivo al max lui riparte da 0)
+							tempCWP <= (CWP + 4*N) mod (TotalRegisters);
+							SWP <= increasePointerBuffer(SWP);--aggiorno il SWP (uso il mod cosi se arrivo al max lui riparte da 0)
 						end if;
 					
 					elsif CALL='0' and RET='1' then --return
 						
 						if CANRESTORE = '1' then
-							if CWP = SWP then --condizione per la quale è necessario fare FILL dalla memoria
+							CWP <= decreasePointerBuffer(CWP); --è ancora possibile tornare indietro nel register file senza prelevare
+							if CWP - (2*N) = 0 and CANSAVE = '1' then --se il risultato sarà 0 non sarà possibile piu fare un altro return
+								CANRESTORE <= '0';	--non è possibile fare un return fino a una CALL
+							end if;
+							if CWP = SWP and CANSAVE = '0' then --condizione per la quale è necessario fare FILL dalla memoria
 								FILL <= '1'; --va in input alla MMU
 								Restoring <= '1';
-							else
-								if CWP = 0 then
-									if CANSAVE = '0' then	--vuol dire che ha gia fatto un giro perchè gia precedentemente il CANSAVE è stato settato a 0, cioe non erano sufficienti i registri ed è stato necessario caricare il piu vecchio set di registri in memoria
-										TotalRegisters - (2*N); --torna alla coda del registro
-									else
-										CANRESTORE <= '0';	--non è possibile fare un return fino a una CALL
-									end if;
-								else
-									CWP <= (CWP - (2*N)); --è ancora possibile tornare indietro nel register file senza prelevare dalla memoria
-								end if;
+								tempCWP <= CWP;
+								SWP <= decreasePointerBuffer(SWP);
 							end if;
 						end if;	
 					end if;
 
 				elsif Storing = '1' then --serve per salvare ad ogni clock gli 2*N registri
-					if CWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
-						CWP <= (CWP + 1) mod TotalRegisters; --incrementa di uno il CWP e il registro indirrizzato lo salva in memoria
-						DATA_TO_MEM <= REGISTERS(CWP);
+					if tempCWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
+						tempCWP <= (tempCWP + 1) mod TotalRegisters; --incrementa di uno il CWP e il registro indirrizzato lo salva in memoria
+						DATA_TO_MEM <= REGISTERS(tempCWP);
 						firstStoring <= '0';
 					else
 						SPILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di SPILL e di Storing
@@ -153,9 +168,9 @@ begin
 					end if;
 					
 				elsif Restoring = '1' then
-					if CWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
-						CWP <= (CWP - 1); --incrementa di uno il CWP e il registro indirrizzato lo salva in memoria
-						REGISTERS(CWP) <= DATA_FROM_MEM;
+					if tempCWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
+						tempCWP <= (tempCWP - 1); --decrementa di uno il CWP e il dato dalla memoria lo salva nel registro
+						REGISTERS(tempCWP) <= DATA_FROM_MEM;
 						firstStoring <= '0';
 					else
 						FILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di SPILL e di Storing
