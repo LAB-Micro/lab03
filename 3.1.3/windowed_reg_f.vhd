@@ -48,12 +48,12 @@ type REG_ARRAY is array(REG_ADDR) of std_logic_vector(nbit-1 downto 0);
 signal REGISTERS 	: REG_ARRAY;
 	
 --internal registers
-signal SWP, CWP 	: integer range 0 to (TotalRegisters)-1; 
+--signal SWP, CWP 	: integer range 0 to (TotalRegisters)-1; 
+signal SWP, CWP 	: integer range 0 to TotalRegisters; 
 signal CANSAVE, CANRESTORE : std_logic;
 signal Storing: std_logic;
 signal firstStoring: std_logic;
 signal Restoring: std_logic;
-signal tempCWP: integer;
 
 --ADDRESS FOR THE REGISTER
 signal R1_AddrInt	: integer range 0 to (2**naddr)-1; 
@@ -125,40 +125,37 @@ begin
 	
 					elsif CALL='1' and RET='0'then	--call
 						
-						if CANSAVE = '1' then
-							CWP <= increasePointerBuffer(CWP); --è ancora possibile salvare nel register file
-							CANRESTORE <= '1';
-						end if;	
+						CWP <= increasePointerBuffer(CWP); --incrementa il CWP
+						CANRESTORE <= '1';
 				
 						if CWP = (TotalRegisters - 4*N) or CANSAVE = '0' then --se si è arrivati all'ultimo slot libero oppure se sono richieste altre call dopo che la fine è stata superatata
 							CANSAVE <= '0';
 							--memorize the next IN/LOCAL in memory
-							SPILL <= '1'; --va in output alla MMU
+							SPILL <= '1'; --va in input alla MMU
 							Storing <= '1'; --segnale interno
-							tempCWP <= (CWP + 4*N) mod (TotalRegisters);
-							SWP <= increasePointerBuffer(SWP);--aggiorno il SWP (uso il mod cosi se arrivo al max lui riparte da 0)
 						end if;
 					
 					elsif CALL='0' and RET='1' then --return
 						
 						if CANRESTORE = '1' then
-							CWP <= decreasePointerBuffer(CWP); --è ancora possibile tornare indietro nel register file senza prelevare
-							if CWP - (2*N) = 0 and CANSAVE = '1' then --se il risultato sarà 0 non sarà possibile piu fare un altro return
+							if CWP = 0 and CANSAVE = '1' then --se il risultato sarà 0 non sarà possibile piu fare un altro return
 								CANRESTORE <= '0';	--non è possibile fare un return fino a una CALL
+							else
+								CWP <= decreasePointerBuffer(CWP); --è ancora possibile tornare indietro nel register file senza prelevare
 							end if;
-							if CWP = SWP and CANSAVE = '0' then --condizione per la quale è necessario fare FILL dalla memoria
+							if CWP = SWP then --condizione per la quale è necessario fare FILL dalla memoria
 								FILL <= '1'; --va in input alla MMU
 								Restoring <= '1';
-								tempCWP <= CWP;
-								SWP <= decreasePointerBuffer(SWP);
+								--tempCWP <= CWP;
+								--SWP <= decreasePointerBuffer(SWP);
 							end if;
 						end if;	
 					end if;
 
 				elsif Storing = '1' then --serve per salvare ad ogni clock gli 2*N registri
-					if tempCWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
-						tempCWP <= (tempCWP + 1) mod TotalRegisters; --incrementa di uno il CWP e il registro indirrizzato lo salva in memoria
-						DATA_TO_MEM <= REGISTERS(tempCWP);
+					if firstStoring = '1' or (SWP mod (2*N)) /= 0  then
+						DATA_TO_MEM <= REGISTERS(SWP);
+						SWP <= (SWP + 1) mod TotalRegisters;	--aggiorna il valore di SWP e lo incrementa fino a 2*N 
 						firstStoring <= '0';
 					else
 						SPILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di SPILL e di Storing
@@ -167,16 +164,18 @@ begin
 						DATA_TO_MEM <= (others => 'Z');
 					end if;
 					
-				elsif Restoring = '1' then
-					if tempCWP mod (2*N) /= 0 or firstStoring = '1' then --finche non salva 2*N registri continua
-						tempCWP <= (tempCWP - 1); --decrementa di uno il CWP e il dato dalla memoria lo salva nel registro
-						REGISTERS(tempCWP) <= DATA_FROM_MEM;
+				elsif Restoring = '1' then --finche non restore 2*N registri continua
+					if firstStoring = '1' or (SWP mod (2*N)) /= 0  then
+						REGISTERS(SWP) <= DATA_TO_MEM;			--il dato dalla memoria lo salva nel registro 
+						SWP <= (SWP - 1);	--decrementa di uno il SWP
 						firstStoring <= '0';
 					else
-						FILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di SPILL e di Storing
-						Restoring <= '0';
+						FILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di FILL e di Storing
+						Storing <= '0';
+						Restoring <= '1';
 						firstStoring <= '1';
 					end if;
+
 				end if;
 			end if;
 				  
