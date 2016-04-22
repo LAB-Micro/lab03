@@ -4,12 +4,11 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 	
 entity windowed_reg is
 generic (
-          M : integer :=4; 		--number global registers	
-          N : integer :=4; 		--number of registers in each of the IN/OUT/LOCAL window
-		  F : integer :=4; 		--number of window
-          naddr : integer :=2; 	--lenght of the address signal = log2(3*N+M)
-		  naddrMem : integer :=16; 	--lenght of the memory
-          nbit : integer := 8 	--width of each register
+	M : integer :=4; 	--number global registers	
+	N : integer :=4; 	--number of registers in each of the IN/OUT/LOCAL window
+	F : integer :=4; 	--number of window
+	naddr : integer :=2; 	--lenght of the address signal = log2(3*N+M)
+	nbit : integer := 8 	--width of each register
           );
 port(
 
@@ -43,9 +42,14 @@ end windowed_reg;
 architecture Behavioral of windowed_reg is
 
 constant TotalRegisters:	integer:= F*2*N;	--total registers IN/LOCAL/OUT
-subtype REG_ADDR is integer range 0 to (TotalRegisters+M-1); -- using integer type
+
+subtype REG_ADDR is integer range 0 to (TotalRegisters-1); -- using integer type
 type REG_ARRAY is array(REG_ADDR) of std_logic_vector(nbit-1 downto 0); 
 signal REGISTERS 	: REG_ARRAY;
+
+subtype GL_REG_ADDR is integer range 0 to (M-1); -- using integer type
+type GL_REG_ARRAY is array(GL_REG_ADDR) of std_logic_vector(nbit-1 downto 0); 
+signal GLOBAL_REGISTERS : GL_REG_ARRAY;
 	
 --internal registers
 --signal SWP, CWP 	: integer range 0 to (TotalRegisters)-1; 
@@ -54,6 +58,7 @@ signal CANSAVE, CANRESTORE : std_logic;
 signal Storing: std_logic;
 signal firstStoring: std_logic;
 signal Restoring: std_logic;
+signal counter: integer;
 
 --ADDRESS FOR THE REGISTER
 signal R1_AddrInt	: integer range 0 to (2**naddr)-1; 
@@ -96,6 +101,7 @@ begin
 				Storing <= '0';
 				firstStoring <= '1';
 				Restoring <= '0';
+				counter <= 0;
 				
 				--external signals
 				OUT1 <= (others => 'Z');
@@ -106,7 +112,7 @@ begin
 		
 			--synchronous read/write with high enable signal
 			elsif ENABLE='1' then 
-			
+				
 				if Storing = '0' and Restoring = '0' then
 					if CALL='0' and RET='0' then
 						--Within a subroutine
@@ -114,19 +120,35 @@ begin
 						R2_AddrInt 	 <=  conv_integer(ADD_RD2);
 						W_AddrInt 	 <=  conv_integer(ADD_WR);
 						if RD1='1' then
-							OUT1 <= REGISTERS(CWP + R1_AddrInt);
+							if R1_AddrInt > (3*N) then	--access to the GLOBAL REGISTER
+								OUT1 <= GLOBAL_REGISTERS((2**naddr)-1 - R1_AddrInt);
+							else
+								OUT1 <= REGISTERS((CWP + R1_AddrInt) mod (3*N));
+							end if;
 						end if;
 						if RD2='1' then
-							OUT2 <= REGISTERS(CWP + R2_AddrInt);
+							if R2_AddrInt > (3*N) then	--access to the GLOBAL REGISTER
+								OUT1 <= GLOBAL_REGISTERS((2**naddr)-1 - R2_AddrInt);
+							else
+								OUT1 <= REGISTERS((CWP + R2_AddrInt) mod (3*N));
+							end if;
 						end if;
 						if WR='1' then
-							REGISTERS(CWP + W_AddrInt) <= DATAIN;
+							if W_AddrInt > (3*N) then	--access to the GLOBAL REGISTER
+								GLOBAL_REGISTERS((2**naddr)-1 - R2_AddrInt) <= DATAIN;
+							else
+								REGISTERS((CWP + R2_AddrInt) mod (3*N)) <= DATAIN;
+							end if;
 						end if;
 	
 					elsif CALL='1' and RET='0'then	--call
 						
 						CWP <= increasePointerBuffer(CWP); --incrementa il CWP
 						CANRESTORE <= '1';
+
+						if CWP = (TotalRegisters - 2*N) then
+							counter <= counter + 1;
+						end if;
 				
 						if CWP = (TotalRegisters - 4*N) or CANSAVE = '0' then --se si è arrivati all'ultimo slot libero oppure se sono richieste altre call dopo che la fine è stata superatata
 							CANSAVE <= '0';
@@ -138,21 +160,31 @@ begin
 					elsif CALL='0' and RET='1' then --return
 						
 						if CANRESTORE = '1' then
-							if CWP = 0 and CANSAVE = '1' then --se il risultato sarà 0 non sarà possibile piu fare un altro return
+							if CWP = 0 and CANSAVE = '1' and counter = 0 then --se il risultato sarà 0 non sarà possibile piu fare un altro return
 								CANRESTORE <= '0';	--non è possibile fare un return fino a una CALL
 							else
 								CWP <= decreasePointerBuffer(CWP); --è ancora possibile tornare indietro nel register file senza prelevare
-							end if;
-							if CWP = SWP then --condizione per la quale è necessario fare FILL dalla memoria
-								FILL <= '1'; --va in input alla MMU
-								Restoring <= '1';
+								if counter = 0 then
+									CANSAVE <= '1';
+								end if;
+
+								if  CWP = SWP then --condizione per la quale è necessario fare FILL dalla memoria. La condizione CANSAVE = '0' serve per non fare la FILL quando si fa call-ret-ret
+									FILL <= '1'; --va in input alla MMU
+									Restoring <= '1';
 								--tempCWP <= CWP;
 								--SWP <= decreasePointerBuffer(SWP);
+								end if;
 							end if;
+
+							if CWP = 0 and counter /= 0 then
+								counter <= counter - 1;
+							end if;
+
 						end if;	
 					end if;
 
 				elsif Storing = '1' then --serve per salvare ad ogni clock gli 2*N registri
+
 					if firstStoring = '1' or (SWP mod (2*N)) /= 0  then
 						DATA_TO_MEM <= REGISTERS(SWP);
 						SWP <= (SWP + 1) mod TotalRegisters;	--aggiorna il valore di SWP e lo incrementa fino a 2*N 
@@ -166,13 +198,17 @@ begin
 					
 				elsif Restoring = '1' then --finche non restore 2*N registri continua
 					if firstStoring = '1' or (SWP mod (2*N)) /= 0  then
-						REGISTERS(SWP) <= DATA_TO_MEM;			--il dato dalla memoria lo salva nel registro 
-						SWP <= (SWP - 1);	--decrementa di uno il SWP
+						REGISTERS(SWP) <= DATA_FROM_MEM;			--il dato dalla memoria lo salva nel registro 
+						
+						if SWP = 0 then
+							SWP <= TotalRegisters - 1;
+						else
+							SWP <= (SWP - 1);	--decrementa di uno il SWP
+						end if;
 						firstStoring <= '0';
 					else
 						FILL <= '0'; --quando ha salvato 2*N registri ababssa il segnale di FILL e di Storing
-						Storing <= '0';
-						Restoring <= '1';
+						Restoring <= '0';
 						firstStoring <= '1';
 					end if;
 
