@@ -1,6 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
 	
 entity windowed_reg is
 generic (
@@ -60,11 +61,6 @@ signal firstStoring: std_logic;
 signal Restoring: std_logic;
 signal counter: integer;
 
---ADDRESS FOR THE REGISTER
-signal R1_AddrInt	: integer range 0 to (2**naddr)-1; 
-signal R2_AddrInt	: integer range 0 to (2**naddr)-1; 
-signal W_AddrInt	: integer range 0 to (2**naddr)-1; 
-
 function increasePointerBuffer(WP: integer) return integer is
 	variable tmp: integer;
 	begin
@@ -86,12 +82,22 @@ end decreasePointerBuffer;
 begin
 
 	P0 : process (CLK)
+	
+	--ADDRESS FOR THE REGISTER
+	variable R1_AddrInt	: integer range 0 to (2**naddr)-1; 
+	variable R2_AddrInt	: integer range 0 to (2**naddr)-1; 
+	variable W_AddrInt	: integer range 0 to (2**naddr)-1; 
+
 	begin
 		if (CLK='1' and CLK'event) then	
 			--synchronous reset
 			if RESET='1' then
-				for I in 0 to TotalRegisters+M-1 loop
-				REGISTERS(I) <= (others => '0');
+				for I in 0 to TotalRegisters-1 loop
+					REGISTERS(I) <= conv_std_logic_vector(I, nbit);
+				end loop;
+
+				for I in 0 to M-1 loop
+					GLOBAL_REGISTERS(I) <= conv_std_logic_vector(I, nbit);
 				end loop;
 				--internal signals
 				SWP <= 0;
@@ -116,28 +122,28 @@ begin
 				if Storing = '0' and Restoring = '0' then
 					if CALL='0' and RET='0' then
 						--Within a subroutine
-						R1_AddrInt 	 <=  conv_integer(ADD_RD1);
-						R2_AddrInt 	 <=  conv_integer(ADD_RD2);
-						W_AddrInt 	 <=  conv_integer(ADD_WR);
+						R1_AddrInt 	 :=  conv_integer(ADD_RD1);
+						R2_AddrInt 	 :=  conv_integer(ADD_RD2);
+						W_AddrInt 	 :=  conv_integer(ADD_WR);
 						if RD1='1' then
-							if R1_AddrInt > (3*N) then	--access to the GLOBAL REGISTER
-								OUT1 <= GLOBAL_REGISTERS((2**naddr)-1 - R1_AddrInt);
+							if R1_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+								OUT1 <= GLOBAL_REGISTERS(R1_AddrInt - 3*N);
 							else
-								OUT1 <= REGISTERS((CWP + R1_AddrInt) mod (3*N));
+								OUT1 <= REGISTERS((CWP + R1_AddrInt) mod (TotalRegisters));
 							end if;
 						end if;
 						if RD2='1' then
-							if R2_AddrInt > (3*N) then	--access to the GLOBAL REGISTER
-								OUT1 <= GLOBAL_REGISTERS((2**naddr)-1 - R2_AddrInt);
+							if R2_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+								OUT1 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
 							else
-								OUT1 <= REGISTERS((CWP + R2_AddrInt) mod (3*N));
+								OUT1 <= REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters));
 							end if;
 						end if;
 						if WR='1' then
-							if W_AddrInt > (3*N) then	--access to the GLOBAL REGISTER
-								GLOBAL_REGISTERS((2**naddr)-1 - R2_AddrInt) <= DATAIN;
+							if W_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+								GLOBAL_REGISTERS(W_AddrInt - 3*N) <= DATAIN;
 							else
-								REGISTERS((CWP + R2_AddrInt) mod (3*N)) <= DATAIN;
+								REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters)) <= DATAIN;
 							end if;
 						end if;
 	
