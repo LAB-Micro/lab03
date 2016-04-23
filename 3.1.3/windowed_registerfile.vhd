@@ -1,7 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
--- use IEEE.STD_LOGIC_ARITH.ALL; --TO TEST
+-- use IEEE.STD_LOGIC_ARITH.ALL; --TO TEST 2nd configuration in the TESTBENCH
 	
 entity windowed_reg is
 generic (
@@ -126,12 +126,12 @@ begin
 			--reset of ALL the IN/out/local registers and of ALL the general windows.
 				for I in 0 to TotalRegisters-1 loop
 					REGISTERS(I) <= (others => '0');
-					--REGISTERS(I) <= conv_std_logic_vector(I, nbit); --TO TEST
+					--REGISTERS(I) <= conv_std_logic_vector(I, nbit); --TO TEST 2nd configuration in the TESTBENCH
 				end loop;
 
 				for I in 0 to M-1 loop
 					GLOBAL_REGISTERS(I) <= (others => '0');
-					--GLOBAL_REGISTERS(I) <= conv_std_logic_vector(I, nbit); --TO TEST
+					--GLOBAL_REGISTERS(I) <= conv_std_logic_vector(I, nbit); --TO TEST 2nd configuration in the TESTBENCH
 				end loop;
 				--internal signals
 				SWP <= 0;
@@ -175,9 +175,9 @@ begin
 							R2_AddrInt:=  conv_integer(ADD_RD2);	--convert the std_logic_vector in integer
 
 							if R2_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
-								OUT1 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
+								OUT2 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
 							else
-								OUT1 <= REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters));
+								OUT2 <= REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters));
 							end if;
 						end if;
 
