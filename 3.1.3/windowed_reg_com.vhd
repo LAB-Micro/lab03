@@ -113,52 +113,54 @@ end decreasePointerBuffer;
 --(F-1)*2*N).....4N, 2N, 0,(F-1)*2*N)......4N, 2N, 0,(F-1)*2*N).....4N, 2N, 0,
 
 begin
+        
+	P0 : process (CLK)
+	begin
+		if (CLK='1' and CLK'event) then	
+    
+        if RESET='1' then
         for I in 0 to 2*N-1 loop --IN, LOCAL WINDOW 1
-				REGISTERS(I) <= X'01';
+				REGISTERS(I) <= X"01";
 				end loop;
         
         for I in 2*N to 3*N-1 loop --OUT W1, IN w2
-				REGISTERS(I) <= X'0C'; --12
+				REGISTERS(I) <= X"0C"; --12
 				end loop;
         
         for I in 3*N to 4*N-1 loop -- LOCAL WINDOW 2
-				REGISTERS(I) <= X'02';
+				REGISTERS(I) <= X"02";
 				end loop;
         
         for I in 4*N to 5*N-1 loop -- OUT W2, IN w3
-				REGISTERS(I) <= X'17'; --23
+				REGISTERS(I) <= X"17"; --23
 				end loop;
         
         for I in 5*N to 6*N-1 loop -- LOCAL WINDOW 3
-				REGISTERS(I) <= X'03';
+				REGISTERS(I) <= X"03";
 				end loop;
         
         for I in 6*N to 7*N-1 loop -- OUT W3, IN w4
-				REGISTERS(I) <= X'22'; --34
+				REGISTERS(I) <= X"22"; --34
 				end loop;
         
         for I in 7*N to 9*N-1 loop -- LOCAL WINDOW 4, OUT W4
-				REGISTERS(I) <= X'04';
+				REGISTERS(I) <= X"04";
 				end loop;
 
         for I in 0 to M-1 loop
         GLOBAL_REGISTERS(i)<= (others => '1');
 				end loop;
-        
-	P0 : process (CLK)
-	begin
-		if (CLK='1' and CLK'event) then	
-			--synchronous reset
-			if RESET='1' then
-        --reset of ALL the IN/out/local registers of ALL the windows
-				for I in 0 to TotalRegisters-1 loop --modificato perchè out of array, REGISTERS[0...TotalRegisters-1], no TotalRegisters+M
-				REGISTERS(I) <= (others => '0');
-				end loop;
-        
-        --reset of global registers
-        for I in 0 to M-1 loop
-        GLOBAL_REGISTERS(i)<= (others => '0');
-				end loop;
+--			--synchronous reset
+--			if RESET='1' then
+--        --reset of ALL the IN/out/local registers of ALL the windows
+--				for I in 0 to TotalRegisters-1 loop --modificato perchè out of array, REGISTERS[0...TotalRegisters-1], no TotalRegisters+M
+--				REGISTERS(I) <= (others => '0');
+--				end loop;
+--        
+--        --reset of global registers
+--        for I in 0 to M-1 loop
+--        GLOBAL_REGISTERS(i)<= (others => '0');
+--				end loop;
 				--internal signals
 				SWP <= 0;
 				CWP <= 0;
@@ -208,10 +210,10 @@ begin
               if RD2='1' then
                   if R2_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
                     --OUT2 <= GLOBAL_REGISTERS((2**naddr)-1 - R1_AddrInt);
-                    OUT2 <= GLOBAL_REGISTERS(R1_AddrInt-(3*N));
+                    OUT2 <= GLOBAL_REGISTERS(R2_AddrInt-(3*N));
                   else
                     --OUT2 <= REGISTERS((CWP + R1_AddrInt) mod (3*N));
-                    OUT2 <= REGISTERS(CWP + R1_AddrInt);
+                    OUT2 <= REGISTERS(CWP + R2_AddrInt);
                     --REGISTERS[0,1...F*2*N+N-1]
                     --the max value of CWP is (F-1)*2*N
                     --the max value of R1_AddrInt in this else-branch is 3N-1
