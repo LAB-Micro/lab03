@@ -1,7 +1,11 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
+<<<<<<< HEAD
 -- use IEEE.STD_LOGIC_ARITH.ALL; --TO TEST
+=======
+use IEEE.STD_LOGIC_ARITH.ALL;
+>>>>>>> last
 	
 entity windowed_reg is
 generic (
@@ -66,11 +70,15 @@ signal firstStoring: std_logic;
 signal Restoring: std_logic;
 signal counter: integer;
 
+<<<<<<< HEAD
 --The IN block is always pointed by 0, 2N, 4N...(F-1)*2*N)
 --the last window, (window number F) starts with (F-1)*2*N).
 --when we are in the last window and if we want to make another call, we have come back to the window 0, so we have to point to 0. We cannot point to F*2*N, because it point to the OUT block of the last window and  in the same time to the IN block of the next window.
 
 function increaseCWP(CWP: integer) return integer is
+=======
+function increasePointerBuffer(WP: integer) return integer is
+>>>>>>> last
 	variable tmp: integer;
 	begin
 	tmp := (CWP + (2*N)) mod (TotalRegisters);
@@ -123,6 +131,7 @@ begin
 		if (CLK='1' and CLK'event) then	
 			--synchronous reset
 			if RESET='1' then
+<<<<<<< HEAD
 			--reset of ALL the IN/out/local registers and of ALL the general windows.
 				for I in 0 to TotalRegisters-1 loop
 					REGISTERS(I) <= (others => '0');
@@ -132,6 +141,14 @@ begin
 				for I in 0 to M-1 loop
 					GLOBAL_REGISTERS(I) <= (others => '0');
 					--GLOBAL_REGISTERS(I) <= conv_std_logic_vector(I, nbit); --TO TEST
+=======
+				for I in 0 to TotalRegisters-1 loop
+					REGISTERS(I) <= conv_std_logic_vector(I, nbit);
+				end loop;
+
+				for I in 0 to M-1 loop
+					GLOBAL_REGISTERS(I) <= conv_std_logic_vector(I, nbit);
+>>>>>>> last
 				end loop;
 				--internal signals
 				SWP <= 0;
@@ -156,12 +173,19 @@ begin
 				if Storing = '0' and Restoring = '0' then
 					if CALL='0' and RET='0' then
 						--Within a subroutine
+<<<<<<< HEAD
 
 						--FIRST READING
 						if RD1='1' then
 
 							R1_AddrInt:=  conv_integer(ADD_RD1);	--convert the std_logic_vector in integer
 
+=======
+						R1_AddrInt 	 :=  conv_integer(ADD_RD1);
+						R2_AddrInt 	 :=  conv_integer(ADD_RD2);
+						W_AddrInt 	 :=  conv_integer(ADD_WR);
+						if RD1='1' then
+>>>>>>> last
 							if R1_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
 								OUT1 <= GLOBAL_REGISTERS(R1_AddrInt - 3*N);
 							else
@@ -171,9 +195,12 @@ begin
 
 						--SECOND READING
 						if RD2='1' then
+<<<<<<< HEAD
 
 							R2_AddrInt:=  conv_integer(ADD_RD2);	--convert the std_logic_vector in integer
 
+=======
+>>>>>>> last
 							if R2_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
 								OUT1 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
 							else
@@ -183,6 +210,7 @@ begin
 
 						--WRITING
 						if WR='1' then
+<<<<<<< HEAD
 
 							W_AddrInt :=  conv_integer(ADD_WR);	--convert the std_logic_vector in integer
 
@@ -190,6 +218,12 @@ begin
 								GLOBAL_REGISTERS(W_AddrInt - 3*N) <= DATAIN;
 							else
 								REGISTERS((CWP + W_AddrInt) mod (TotalRegisters)) <= DATAIN;
+=======
+							if W_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+								GLOBAL_REGISTERS(W_AddrInt - 3*N) <= DATAIN;
+							else
+								REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters)) <= DATAIN;
+>>>>>>> last
 							end if;
 						end if;
 	
