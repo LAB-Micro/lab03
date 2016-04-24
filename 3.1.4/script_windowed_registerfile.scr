@@ -1,0 +1,18 @@
+## In the TRANSCRIPT ##
+## source script_windowed_registerfile.scr ##
+
+# analyzing and checking vhdl netlist #
+analyze -library WORK -format vhdl {windowed_registerfile.vhd}
+
+# elaborating the top entity #
+elaborate WINDOWED_REG -architecture BEHAVIORAL -library WORK -parameters "M=4, N=4, F=4, naddr=4, nbit= 8"
+
+# first compilation, without constraints #
+compile
+
+# saving file #
+write -hierarchy -format vhdl -output windowed_registerfile-8bits-synth.vhdl
+
+# reporting timing and power after the first synthesis without constraints #
+report_timing > windowed_registerfile-8bits-timing.txt
+#report_area > windowed_registerfile-8bits-area.txt

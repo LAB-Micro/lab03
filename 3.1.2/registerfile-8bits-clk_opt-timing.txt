@@ -1,0 +1,52 @@
+Information: Updating design information... (UID-85)
+ 
+****************************************
+Report : timing
+        -path full
+        -delay max
+        -max_paths 1
+Design : register_file_npower3_nbit8
+Version: Z-2007.03-SP1
+Date   : Sun Apr 24 16:02:38 2016
+****************************************
+
+Operating Conditions: typical   Library: NangateOpenCellLibrary
+Wire Load Model Mode: top
+
+  Startpoint: ADD_RD1[0] (input port)
+  Endpoint: OUT1_reg[0]
+            (rising edge-triggered flip-flop clocked by CLK)
+  Path Group: CLK
+  Path Type: max
+
+  Des/Clust/Port     Wire Load Model       Library
+  ------------------------------------------------
+  register_file_npower3_nbit8
+                     5K_hvratio_1_1        NangateOpenCellLibrary
+
+  Point                                    Incr       Path
+  -----------------------------------------------------------
+  clock (input port clock) (rise edge)     0.00       0.00
+  input external delay                     0.00       0.00 r
+  ADD_RD1[0] (in)                          0.00       0.00 r
+  U707/ZN (INV_X1)                         0.03       0.03 f
+  U517/ZN (NAND2_X1)                       0.11       0.14 r
+  U531/ZN (OAI22_X1)                       0.06       0.20 f
+  U591/ZN (AOI221_X1)                      0.09       0.29 r
+  U589/ZN (OAI222_X1)                      0.05       0.34 f
+  OUT1_reg[0]/D (DFF_X1)                   0.01       0.35 f
+  data arrival time                                   0.35
+
+  clock CLK (rise edge)                    2.00       2.00
+  clock network delay (ideal)              0.00       2.00
+  OUT1_reg[0]/CK (DFF_X1)                  0.00       2.00 r
+  library setup time                      -0.05       1.95
+  data required time                                  1.95
+  -----------------------------------------------------------
+  data required time                                  1.95
+  data arrival time                                  -0.35
+  -----------------------------------------------------------
+  slack (MET)                                         1.60
+
+
+1

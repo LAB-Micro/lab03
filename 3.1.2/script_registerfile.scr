@@ -15,11 +15,11 @@ elaborate CFG_RF_BEH -library WORK -parameters "npower = 3, nbit = 8"
 compile
 
 # saving file #
-write -hierarchy -format vhdl -output registerfile-8bits-synth-no-opt.vhdl
+write -hierarchy -format vhdl -output registerfile-8bits-no_opt-synth.vhdl
 
 # reporting timing and power after the first synthesis without constraints #
-report_timing > registerfile-8bits-no-opt-timing.txt
-report_area > registerfile-8bits-no-opt-area.txt
+report_timing > registerfile-8bits-no_opt-timing.txt
+report_area > registerfile-8bits-no_opt-area.txt
 
 
 
@@ -31,14 +31,14 @@ create_clock -name "CLK" -period $Period CLK
 compile -map_effort high
 
 # saving file #
-write -hierarchy -format vhdl -output registerfile-8bits-synth-clk-opt.vhdl
+write -hierarchy -format vhdl -output registerfile-8bits-clk_opt-synth.vhdl
 
 # reporting timing and power after the first synthesis with clock constraint #
-report_timing > registerfile-8bits-clk-opt-timing.txt
-report_area > registerfile-8bits-clk-opt-area.txt
+report_timing > registerfile-8bits-clk_opt-timing.txt
+report_area > registerfile-8bits-clk_opt-area.txt
 
 # report clock #
-report_clock > registerfile-8bits-clk-opt-clock.txt
+report_clock > registerfile-8bits-clk_opt-clock.txt
 
 
 
@@ -50,11 +50,11 @@ set_max_delay $delay -from [all_inputs] -to [all_outputs]
 compile -map_effort high
 
 # saving file #
-write -hierarchy -format vhdl -output registerfile-8bitsh-clk-delay-opt-synt.vhdl
+write -hierarchy -format vhdl -output registerfile-8bitsh-clk_delay_opt-synth.vhdl
 
 # reporting timing and power after the first synthesis with clock and max_delay constraints #
-report_timing > registerfile-8bits-clk-delay-opt-timing.txt
-report_area > registerfile-8bits-clk-delay-opt-area.txt
+report_timing > registerfile-8bits-clk_delay_opt-timing.txt
+report_area > registerfile-8bits-clk_delay_opt-area.txt
 
 # report clock #
-report_clock > registerfile-8bits-clk-delay-opt-clock.txt
+report_clock > registerfile-8bits-clk_delay_opt-clock.txt
