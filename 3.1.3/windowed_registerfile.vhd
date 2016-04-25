@@ -176,7 +176,7 @@ begin
 
 							if R2_AddrInt >= (3*N) and (R2_AddrInt - 3*N) < M then	--access to the GLOBAL REGISTER
 								OUT2 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
-							elsif W_AddrInt < (3*N) then
+							elsif R2_AddrInt < (3*N) then
 								OUT2 <= REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters));
 							end if;
 						end if;
