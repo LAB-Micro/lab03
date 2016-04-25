@@ -161,10 +161,10 @@ begin
 						if RD1='1' then
 
 							R1_AddrInt:=  conv_integer(ADD_RD1);	--convert the std_logic_vector in integer
-
-							if R1_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+							
+							if R1_AddrInt >= (3*N) and (R1_AddrInt - 3*N) < M then	--access to the GLOBAL REGISTER
 								OUT1 <= GLOBAL_REGISTERS(R1_AddrInt - 3*N);
-							else
+							elsif R1_AddrInt < (3*N) then
 								OUT1 <= REGISTERS((CWP + R1_AddrInt) mod (TotalRegisters));
 							end if;
 						end if;
@@ -174,9 +174,9 @@ begin
 
 							R2_AddrInt:=  conv_integer(ADD_RD2);	--convert the std_logic_vector in integer
 
-							if R2_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+							if R2_AddrInt >= (3*N) and (R2_AddrInt - 3*N) < M then	--access to the GLOBAL REGISTER
 								OUT2 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
-							else
+							elsif W_AddrInt < (3*N) then
 								OUT2 <= REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters));
 							end if;
 						end if;
@@ -186,9 +186,9 @@ begin
 
 							W_AddrInt :=  conv_integer(ADD_WR);	--convert the std_logic_vector in integer
 
-							if W_AddrInt >= (3*N) then	--access to the GLOBAL REGISTER
+							if W_AddrInt >= (3*N) and (W_AddrInt - 3*N) < M then	--access to the GLOBAL REGISTER
 								GLOBAL_REGISTERS(W_AddrInt - 3*N) <= DATAIN;
-							else
+							elsif W_AddrInt < (3*N) then
 								REGISTERS((CWP + W_AddrInt) mod (TotalRegisters)) <= DATAIN;
 							end if;
 						end if;
