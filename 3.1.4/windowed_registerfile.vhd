@@ -166,6 +166,8 @@ begin
 								OUT1 <= GLOBAL_REGISTERS(R1_AddrInt - 3*N);
 							elsif R1_AddrInt < (3*N) then
 								OUT1 <= REGISTERS((CWP + R1_AddrInt) mod (TotalRegisters));
+							else
+								OUT1 <= (others => 'Z');
 							end if;
 						end if;
 
@@ -178,6 +180,8 @@ begin
 								OUT2 <= GLOBAL_REGISTERS(R2_AddrInt - 3*N);
 							elsif R2_AddrInt < (3*N) then
 								OUT2 <= REGISTERS((CWP + R2_AddrInt) mod (TotalRegisters));
+							else
+								OUT2 <= (others => 'Z');
 							end if;
 						end if;
 
