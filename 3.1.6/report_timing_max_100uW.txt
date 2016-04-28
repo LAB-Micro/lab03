@@ -1,0 +1,39 @@
+****************************************
+Report : timing
+        -path full
+        -delay max
+        -max_paths 1
+        -sort_by group
+Design : sipisoAluControl_generic
+Version: Z-2007.03-SP1
+Date   : Mon Apr 25 12:57:37 2016
+****************************************
+
+Operating Conditions: typical   Library: NangateOpenCellLibrary
+Wire Load Model Mode: top
+
+  Startpoint: CURRENT_STATE_reg[3]
+              (rising edge-triggered flip-flop)
+  Endpoint: shiftA (output port)
+  Path Group: (none)
+  Path Type: max
+
+  Des/Clust/Port     Wire Load Model       Library
+  ------------------------------------------------
+  sipisoAluControl_generic
+                     5K_hvratio_1_1        NangateOpenCellLibrary
+
+  Point                                    Incr       Path
+  -----------------------------------------------------------
+  CURRENT_STATE_reg[3]/CK (DFFR_X1)        0.00       0.00 r
+  CURRENT_STATE_reg[3]/QN (DFFR_X1)        0.08       0.08 f
+  U163/ZN (INV_X4)                         0.19       0.27 r
+  U479/ZN (OAI21_X1)                       0.08       0.35 f
+  U425/ZN (OAI21_X1)                       0.05       0.40 r
+  U424/ZN (INV_X1)                         0.02       0.42 f
+  shiftA (out)                             0.00       0.42 f
+  data arrival time                                   0.42
+  -----------------------------------------------------------
+  (Path is unconstrained)
+
+
