@@ -1,0 +1,72 @@
+## In the TRANSCRIPT ##
+## source script.scr ##
+
+#######
+#  compile -exact_map: sintesi rispettando il vhdl senza modifiche sulla logica (mantiene la struttura iniziale senza operare sostituzioni)
+# compile -map_effort high: il sintetizzatore fa tutte le sostituzioni sulla logica per rispettare le constraints
+####
+
+# remove old design #
+remove_design -designs
+
+# analyzing and checking vhdl netlist #
+analyze -library WORK -format vhdl {sipisoAluControl_generic.vhd}
+analyze -library WORK -format vhdl {sipisoalu_generic.vhd}
+
+# elaborating the top entity #
+elaborate CFG_SIPISO_ALU_generic_BEH -library WORK -parameters "nbit = 32"
+
+# first compilation, without constraints #
+compile
+
+# reporting timing and power after the first synthesis without constraints #
+report_timing > report_timing_32bit_generic-no-opt.txt
+report_power > report_power_32bit_generic-no-opt.txt
+report_power -cell > report_power_cell_32bit_generic-no-opt.txt
+report_power -net > report_power_net_32bit_generic-no-opt.txt
+
+
+# MAX_PATH ottenuto =  0.51, provo con un MAX_PATH:
+set MAX_PATH 0.40
+
+
+# forces a combinational max delay of MAX_PATH ns from each of the inputs to each of th output in case combinational paths are present #
+set_max_delay $MAX_PATH -from [all_inputs] -to [all_outputs]
+
+compile -map_effort high
+
+# reporting timing and power after the first synthesis without constraints #
+report_timing > report_timing_32bit_generic-delay-constraint.txt
+report_power > report_power_32bit_generic-delay-constraint.txt
+report_power -cell > report_power_cell_32bit_generic-delay-constraint.txt
+report_power -net > report_power_net_32bit_generic-delay-constraint.txt
+
+# settando il max_delay a 0.40 ottengo un delay di 0.38. Utilizzo un clock di 0.40 #
+
+# create the CLK #
+create_clock -name "CLK" -period $MAX_PATH CLK
+
+compile -map_effort high
+
+# reporting clock set  #
+report_timing > report_timing_32bit_generic-clk-constraint.txt
+report_power > report_power_32bit_generic-clk-constraint.txt
+report_power -cell > report_power_cell_32bit_generic-clk-constraint.txt
+report_power -net > report_power_net_32bit_generic-clk-constraint.txt
+
+# nonostante il max_delay era di 0.38 della combinational logic e nonostante abbia settato il clock a 0.40 il coinstraint non viene piu rispettato. Comportamento anomalo!!!!#
+
+# dynamic power constraint #
+# Total Dynamic Power ottenuto senza constraint è = 882 uW, lo setto a 700uW
+set_max_dynamic_power 700 uW
+
+compile -map_effort high
+
+# reporting timing and power after the first synthesis without constraints #
+report_timing > report_timing_32bit_generic-pw-constraint.txt
+report_power > report_power_32bit_generic-pw-constraint.txt
+report_power -cell > report_power_cell_32bit_generic-pw-constraint.txt
+report_power -net > report_power_net_32bit_generic-pw-constraint.txt
+
+
+

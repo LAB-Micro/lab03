@@ -1,0 +1,63 @@
+Information: Updating design information... (UID-85)
+ 
+****************************************
+Report : timing
+        -path full
+        -delay max
+        -max_paths 1
+Design : SIPISOALU_generic_nbit32
+Version: Z-2007.03-SP1
+Date   : Thu Apr 28 12:14:32 2016
+****************************************
+
+Operating Conditions: typical   Library: NangateOpenCellLibrary
+Wire Load Model Mode: top
+
+  Startpoint: PIPO_reg[14]
+              (rising edge-triggered flip-flop clocked by CLK)
+  Endpoint: PISO_reg[31]
+            (rising edge-triggered flip-flop clocked by CLK)
+  Path Group: CLK
+  Path Type: max
+
+  Des/Clust/Port     Wire Load Model       Library
+  ------------------------------------------------
+  SIPISOALU_generic_nbit32
+                     5K_hvratio_1_1        NangateOpenCellLibrary
+
+  Point                                                   Incr       Path
+  --------------------------------------------------------------------------
+  clock CLK (rise edge)                                   0.00       0.00
+  clock network delay (ideal)                             0.00       0.00
+  PIPO_reg[14]/CK (DFFR_X1)                               0.00       0.00 r
+  PIPO_reg[14]/Q (DFFR_X1)                                0.11       0.11 r
+  add_89/A[14] (SIPISOALU_generic_nbit32_DW01_add_1)      0.00       0.11 r
+  add_89/U56/ZN (NOR2_X1)                                 0.04       0.15 f
+  add_89/U39/ZN (NOR2_X1)                                 0.04       0.19 r
+  add_89/U36/ZN (AND4_X2)                                 0.07       0.25 r
+  add_89/U112/ZN (NAND3_X1)                               0.04       0.29 f
+  add_89/U71/ZN (NAND3_X1)                                0.04       0.33 r
+  add_89/U70/ZN (NOR2_X1)                                 0.03       0.35 f
+  add_89/U101/ZN (OAI21_X1)                               0.05       0.40 r
+  add_89/U425/ZN (AOI21_X1)                               0.03       0.44 f
+  add_89/U404/ZN (XNOR2_X1)                               0.06       0.49 f
+  add_89/SUM[31] (SIPISOALU_generic_nbit32_DW01_add_1)
+                                                          0.00       0.49 f
+  U913/ZN (NAND2_X1)                                      0.03       0.52 r
+  U1097/ZN (NAND2_X1)                                     0.02       0.54 f
+  PISO_reg[31]/D (DFFR_X1)                                0.01       0.55 f
+  data arrival time                                                  0.55
+
+  clock CLK (rise edge)                                   0.40       0.40
+  clock network delay (ideal)                             0.00       0.40
+  PISO_reg[31]/CK (DFFR_X1)                               0.00       0.40 r
+  library setup time                                     -0.04       0.36
+  data required time                                                 0.36
+  --------------------------------------------------------------------------
+  data required time                                                 0.36
+  data arrival time                                                 -0.55
+  --------------------------------------------------------------------------
+  slack (VIOLATED)                                                  -0.19
+
+
+1

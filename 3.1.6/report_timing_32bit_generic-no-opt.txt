@@ -1,0 +1,41 @@
+Information: Updating design information... (UID-85)
+ 
+****************************************
+Report : timing
+        -path full
+        -delay max
+        -max_paths 1
+Design : SIPISOALU_generic_nbit32
+Version: Z-2007.03-SP1
+Date   : Thu Apr 28 12:12:23 2016
+****************************************
+
+Operating Conditions: typical   Library: NangateOpenCellLibrary
+Wire Load Model Mode: top
+
+  Startpoint: control/CURRENT_STATE_reg[3]
+              (rising edge-triggered flip-flop)
+  Endpoint: STARTC (output port)
+  Path Group: (none)
+  Path Type: max
+
+  Des/Clust/Port     Wire Load Model       Library
+  ------------------------------------------------
+  SIPISOALU_generic_nbit32
+                     5K_hvratio_1_1        NangateOpenCellLibrary
+
+  Point                                                   Incr       Path
+  --------------------------------------------------------------------------
+  control/CURRENT_STATE_reg[3]/CK (DFFR_X1)               0.00       0.00 r
+  control/CURRENT_STATE_reg[3]/QN (DFFR_X1)               0.08       0.08 f
+  control/U8/ZN (INV_X4)                                  0.19       0.27 r
+  control/U275/ZN (NAND2_X1)                              0.08       0.35 f
+  control/U10/ZN (INV_X2)                                 0.15       0.50 r
+  control/startC (sipisoAluControl_generic_nbit32)        0.00       0.50 r
+  STARTC (out)                                            0.01       0.51 r
+  data arrival time                                                  0.51
+  --------------------------------------------------------------------------
+  (Path is unconstrained)
+
+
+1

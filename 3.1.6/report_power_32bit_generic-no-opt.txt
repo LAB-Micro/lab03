@@ -1,9 +1,15 @@
+Loading db file '/home/mariagrazia.graziano/do/libnangate/NangateOpenCellLibrary_typical_ecsm.db'
+Information: Propagating switching activity (low effort zero delay simulation). (PWR-6)
+Warning: There is no defined clock in the design. (PWR-80)
+Warning: Design has unannotated primary inputs. (PWR-414)
+Warning: Design has unannotated sequential cell outputs. (PWR-415)
+ 
 ****************************************
 Report : power
         -analysis_effort low
-Design : sipisoAluControl_generic
+Design : SIPISOALU_generic_nbit32
 Version: Z-2007.03-SP1
-Date   : Mon Apr 25 12:44:07 2016
+Date   : Thu Apr 28 12:12:25 2016
 ****************************************
 
 
@@ -17,7 +23,7 @@ Wire Load Model Mode: top
 
 Design        Wire Load Model            Library
 ------------------------------------------------
-sipisoAluControl_generic
+SIPISOALU_generic_nbit32
                        5K_hvratio_1_1    NangateOpenCellLibrary
 
 
@@ -30,10 +36,11 @@ Power-specific unit information :
     Leakage Power Units = 1nW
 
 
-  Cell Internal Power  = 381.7724 uW   (62%)
-  Net Switching Power  = 229.2469 uW   (38%)
+  Cell Internal Power  = 569.7039 uW   (65%)
+  Net Switching Power  = 312.9845 uW   (35%)
                          ---------
-Total Dynamic Power    = 611.0193 uW  (100%)
+Total Dynamic Power    = 882.6884 uW  (100%)
 
-Cell Leakage Power     =  16.1693 uW
+Cell Leakage Power     =  29.7523 uW
 
+1
